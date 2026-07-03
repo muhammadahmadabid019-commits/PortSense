@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    container_name: portsense_db
+    environment:
+      POSTGRES_USER: portsense
+      POSTGRES_PASSWORD: portsense_password
+      POSTGRES_DB: portsense
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: portsense_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    container_name: portsense_backend
+    ports:
+      - "8000:8000"   # exposed for Vite dev server proxy (localhost:5173)
+    environment:
+      - POSTGRES_HOST=db
+      - REDIS_HOST=redis
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./backend
+    container_name: portsense_worker
+    command: celery -A app.core.celery_app worker -B -l info
+    environment:
+      - POSTGRES_HOST=db
+      - REDIS_HOST=redis
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # At Docker build time the SPA uses relative paths (/api/v1, /ws)
+        # which nginx proxies to the backend service.
+        VITE_API_URL: /api/v1
+        VITE_WS_URL: ""
+    container_name: portsense_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
