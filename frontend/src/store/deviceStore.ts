@@ -23,6 +23,8 @@ interface DeviceState {
   devices: Device[];
   interfaces: Record<string, Interface[]>;
   fetchDevices: () => Promise<void>;
+  fetchInterfaces: (deviceId: string) => Promise<void>;
+  fetchAllInterfaces: () => Promise<void>;
   addDevice: (device: Partial<Device>) => Promise<void>;
   deleteDevice: (deviceId: string) => Promise<void>;
   discoverInterfaces: (deviceId: string) => Promise<void>;
@@ -38,6 +40,18 @@ export const useDeviceStore = create<DeviceState>((set, get) => ({
   fetchDevices: async () => {
     const res = await api.get('/devices');
     set({ devices: res.data });
+  },
+
+  fetchInterfaces: async (deviceId) => {
+    const res = await api.get(`/interfaces/device/${deviceId}`);
+    set((state) => ({
+      interfaces: { ...state.interfaces, [deviceId]: res.data },
+    }));
+  },
+
+  fetchAllInterfaces: async () => {
+    const { devices, fetchInterfaces } = get();
+    await Promise.all(devices.map((d) => fetchInterfaces(d.id)));
   },
   
   addDevice: async (device) => {

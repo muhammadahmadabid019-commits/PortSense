@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useStatsStore } from '../../store/statsStore';
 import { Server, Activity, AlertTriangle, Zap, ArrowRight } from 'lucide-react';
 
-export const Dashboard = ({ onNavigate }: { onNavigate: (tab: 'devices' | 'alerts') => void }) => {
+export const Dashboard = ({ onNavigate }: { onNavigate: (tab: 'devices' | 'alerts' | 'monitoring') => void }) => {
   const { stats, loading, fetchStats } = useStatsStore();
 
   useEffect(() => {

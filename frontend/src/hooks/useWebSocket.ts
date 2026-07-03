@@ -24,22 +24,31 @@ export const useWebSocket = (interfaceId: string, onMessage: (data: any) => void
     const wsBase = explicitBase
       ? explicitBase
       : `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`;
-    wsRef.current = new WebSocket(`${wsBase}/ws/metrics/${interfaceId}`);
+    
+    let isCancelled = false;
 
-    wsRef.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        callbackRef.current(data);
-      } catch (err) {
-        console.error('Failed to parse WS message', err);
-      }
-    };
+    // Delay creation slightly to prevent React StrictMode from immediately closing a connecting socket
+    const timeoutId = setTimeout(() => {
+      if (isCancelled) return;
+      wsRef.current = new WebSocket(`${wsBase}/ws/metrics/${interfaceId}`);
 
-    wsRef.current.onerror = (err) => {
-      console.error('WebSocket error', err);
-    };
+      wsRef.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          callbackRef.current(data);
+        } catch (err) {
+          console.error('Failed to parse WS message', err);
+        }
+      };
+
+      wsRef.current.onerror = (err) => {
+        console.error('WebSocket error', err);
+      };
+    }, 50);
 
     return () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
       wsRef.current?.close();
       wsRef.current = null;
     };

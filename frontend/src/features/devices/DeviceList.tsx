@@ -4,7 +4,7 @@ import { Plus, Server, Activity, Trash2 } from 'lucide-react';
 import { InterfaceList } from './InterfaceList';
 
 export const DeviceList = () => {
-  const { devices, fetchDevices, addDevice, deleteDevice } = useDeviceStore();
+  const { devices, fetchDevices, addDevice, deleteDevice, fetchInterfaces } = useDeviceStore();
   const [showAdd, setShowAdd] = useState(false);
   const [newDevice, setNewDevice] = useState({ name: '', ip_address: '', snmp_community: 'public' });
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
@@ -12,6 +12,11 @@ export const DeviceList = () => {
   useEffect(() => {
     fetchDevices();
   }, [fetchDevices]);
+
+  const handleSelectDevice = (deviceId: string) => {
+    setSelectedDevice(deviceId);
+    fetchInterfaces(deviceId);
+  };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,8 +26,8 @@ export const DeviceList = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-6 h-full flex flex-col">
+      <div className="flex justify-between items-center mb-8 shrink-0">
         <h1 className="text-3xl font-bold flex items-center gap-3 text-slate-100">
           <Server className="text-cyan-400" size={32} />
           Network Devices
@@ -36,7 +41,7 @@ export const DeviceList = () => {
       </div>
 
       {showAdd && (
-        <form onSubmit={handleAdd} className="bg-slate-900 p-6 rounded-xl border border-slate-800 mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <form onSubmit={handleAdd} className="bg-slate-900 p-6 rounded-xl border border-slate-800 mb-8 grid grid-cols-1 md:grid-cols-4 gap-4 shrink-0">
           <div>
             <label className="block text-sm text-slate-400 mb-1">Name</label>
             <input 
@@ -71,12 +76,12 @@ export const DeviceList = () => {
         </form>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-180px)]">
-        <div className="col-span-1 space-y-4 overflow-auto pr-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+        <div className="col-span-1 space-y-4 overflow-y-auto pr-2">
           {devices.map(device => (
             <div 
               key={device.id} 
-              onClick={() => setSelectedDevice(device.id)}
+              onClick={() => handleSelectDevice(device.id)}
               className={`p-4 rounded-xl cursor-pointer border transition-all ${selectedDevice === device.id ? 'bg-slate-800 border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.15)]' : 'bg-slate-900 border-slate-800 hover:border-slate-600'}`}
             >
               <div className="flex justify-between items-center mb-2">
@@ -110,7 +115,7 @@ export const DeviceList = () => {
           )}
         </div>
         
-        <div className="col-span-1 lg:col-span-2 h-full">
+        <div className="col-span-1 lg:col-span-2 h-full overflow-hidden flex flex-col">
           {selectedDevice ? (
             <InterfaceList deviceId={selectedDevice} />
           ) : (
